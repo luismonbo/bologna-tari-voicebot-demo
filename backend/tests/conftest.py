@@ -30,6 +30,10 @@ PAST_DATE = "2020-01-01"
 @pytest.fixture
 def client():
     store = AppointmentStore()
-    app.dependency_overrides[get_store] = lambda: store
+
+    def override_get_store():
+        yield store
+
+    app.dependency_overrides[get_store] = override_get_store
     yield TestClient(app)
     app.dependency_overrides.clear()

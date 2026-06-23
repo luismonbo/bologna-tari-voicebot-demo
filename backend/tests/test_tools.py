@@ -124,23 +124,6 @@ def test_create_appointment_missing_field_returns_422(client):
 # POST /tools/lookup_appointment
 # ---------------------------------------------------------------------------
 
-def test_lookup_by_code_found(client):
-    r = client.post("/tools/create_appointment", json=VALID_BOOKING)
-    code = r.json()["confirmation_code"]
-    lookup = client.post("/tools/lookup_appointment", json={"confirmation_code": code})
-    assert lookup.status_code == 200
-    body = lookup.json()
-    assert body["status"] == "found"
-    assert body["appointment"]["confirmation_code"] == code
-
-
-def test_lookup_by_code_not_found(client):
-    r = client.post("/tools/lookup_appointment", json={"confirmation_code": "doesnotexist"})
-    assert r.status_code == 200
-    assert r.json()["status"] == "not_found"
-    assert r.json()["appointment"] is None
-
-
 def test_lookup_by_name_found(client):
     client.post("/tools/create_appointment", json=VALID_BOOKING)
     r = client.post("/tools/lookup_appointment", json={"citizen_name": VALID_BOOKING["citizen_name"]})

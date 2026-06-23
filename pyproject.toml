@@ -10,6 +10,8 @@ dependencies = [
     "pydantic",
     "httpx",
     "httpx2>=2.4.0",
+    "sqlalchemy>=2.0.51",
+    "psycopg[binary]>=3.3.4",
 ]
 
 [dependency-groups]

@@ -28,7 +28,7 @@ def create_appointment(req: CreateRequest, store: AppointmentStore = Depends(get
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return store.book(
-        office=req.office,
+        office=req.office.lower(),
         date=req.date,
         time=req.time,
         citizen_name=req.citizen_name,

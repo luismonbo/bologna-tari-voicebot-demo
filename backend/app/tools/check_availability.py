@@ -21,5 +21,6 @@ def check_availability(req: AvailabilityRequest, store: AppointmentStore = Depen
         validate_future_date(d)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
-    booked = store.booked_slots_for(req.office, req.date)
-    return availability.check_availability(req.office, req.date, booked)
+    office = req.office.lower()
+    booked = store.booked_slots_for(office, req.date)
+    return availability.check_availability(office, req.date, booked)

@@ -1,8 +1,18 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
+from app.database import init_db
 from app.tools import check_availability, create_appointment, lookup_appointment, query_services
 
-app = FastAPI(title="Bologna TARI Voicebot — Tool Backend")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="Bologna TARI Voicebot — Tool Backend", lifespan=lifespan)
+
 
 app.include_router(query_services.router, prefix="/tools")
 app.include_router(check_availability.router, prefix="/tools")
