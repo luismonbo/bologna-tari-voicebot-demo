@@ -1,6 +1,7 @@
 import os
-from sqlalchemy import create_engine, Column, String, Text, DateTime, UniqueConstraint, Index
+from sqlalchemy import create_engine, Column, String, Text, DateTime, UniqueConstraint, Index, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from pgvector.sqlalchemy import Vector
 from datetime import datetime, UTC
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg://user:password@db:5432/tari")
@@ -29,6 +30,20 @@ class AppointmentModel(Base):
     __table_args__ = (
         UniqueConstraint("office", "date", "time", name="uq_slot"),
         Index("idx_citizen_name", "citizen_name"),
+    )
+
+
+class DocumentModel(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True)
+    source_url = Column(String(512), nullable=False)
+    chunk_text = Column(Text, nullable=False)
+    embedding = Column(Vector(1536), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+
+    __table_args__ = (
+        Index("idx_embedding", "embedding", postgresql_using="ivfflat"),
     )
 
 
