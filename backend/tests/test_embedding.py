@@ -9,7 +9,7 @@ class TestOllamaEmbedding:
         """OllamaEmbedder initializes with default config."""
         embedder = OllamaEmbedder()
 
-        assert embedder.model == "nomic-embed-text"
+        assert embedder.model == "embeddinggemma"
         assert embedder.base_url == "http://localhost:11434"
         assert isinstance(embedder._embedding_cache, dict)
 

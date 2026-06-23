@@ -38,7 +38,13 @@ async def ingest_json_file(
         data = json.load(f)
 
     source_url = data.get("source_url", "")
-    content = data.get("content", "")
+    content_data = data.get("content", "")
+
+    # Handle nested content structure (content.content)
+    if isinstance(content_data, dict):
+        content = content_data.get("content", "")
+    else:
+        content = content_data
 
     if not content:
         return 0

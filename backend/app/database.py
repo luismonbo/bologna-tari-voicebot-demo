@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, String, Text, DateTime, UniqueConstraint, Index, Integer
+from sqlalchemy import create_engine, Column, String, Text, DateTime, UniqueConstraint, Index, Integer, func
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from pgvector.sqlalchemy import Vector
 from datetime import datetime, UTC
@@ -25,7 +25,7 @@ class AppointmentModel(Base):
     citizen_name = Column(String(255), nullable=False)
     contact = Column(String(255), nullable=False)
     reason = Column(Text, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
     __table_args__ = (
         UniqueConstraint("office", "date", "time", name="uq_slot"),
@@ -39,8 +39,8 @@ class DocumentModel(Base):
     id = Column(Integer, primary_key=True)
     source_url = Column(String(512), nullable=False)
     chunk_text = Column(Text, nullable=False)
-    embedding = Column(Vector(1536), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    embedding = Column(Vector(768), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
     __table_args__ = (
         Index("idx_embedding", "embedding", postgresql_using="ivfflat"),

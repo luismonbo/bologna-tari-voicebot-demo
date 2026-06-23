@@ -10,7 +10,7 @@ class OllamaEmbedder:
     def __init__(
         self,
         base_url: str = None,
-        model: str = "nomic-embed-text",
+        model: str = "embeddinggemma",
     ):
         self.base_url = base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.model = model

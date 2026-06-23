@@ -22,8 +22,12 @@ from app.database import Base, DocumentModel
 async def main():
     """Load all TARI JSON files → chunk → embed → store in pgvector."""
 
-    # Database setup
-    db_url = "postgresql+asyncpg://postgres:postgres@localhost:5432/tari_db"
+    # Database setup (use env var or default to docker-compose stack)
+    import os
+    db_url = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/tari_db"
+    )
     engine = create_async_engine(db_url, echo=False)
 
     # Create tables

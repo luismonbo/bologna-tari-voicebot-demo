@@ -1,0 +1,63 @@
+services:
+  # PostgreSQL with pgvector extension
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: tari_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tari_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ollama for embeddings
+  ollama:
+    image: ollama/ollama:latest
+    container_name: tari_ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (optional, commented out for now)
+  # backend:
+  #   build: ./backend
+  #   container_name: tari_backend
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/tari_db
+  #     OLLAMA_BASE_URL: http://ollama:11434
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     ollama:
+  #       condition: service_healthy
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (optional, commented out for now)
+  # frontend:
+  #   build: ./frontend
+  #   container_name: tari_frontend
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - backend
+
+volumes:
+  postgres_data:
+  ollama_data:

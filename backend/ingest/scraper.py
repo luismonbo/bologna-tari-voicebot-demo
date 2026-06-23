@@ -21,7 +21,7 @@ def scrape_tari_content():
     # Configure with OpenAI API (or switch to Ollama if OPENAI_API_KEY not set)
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        print("⚠️  OPENAI_API_KEY not set. Using Ollama (ollama/llama2)")
+        print("OPENAI_API_KEY not set. Using Ollama (ollama/llama2)")
         graph_config = {
             "llm": {
                 "model": "ollama/hf.co/unsloth/gemma-4-12b-it-GGUF:Q4_K_M",
