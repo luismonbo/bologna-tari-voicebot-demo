@@ -9,9 +9,12 @@ dependencies = [
     "uvicorn[standard]",
     "pydantic",
     "httpx",
-    "httpx2>=2.4.0",
     "sqlalchemy>=2.0.51",
+    "asyncpg",
     "psycopg[binary]>=3.3.4",
+    "pgvector>=0.4.2",
+    "scrapegraphai>=2.1.4",
+    "openai>=2.43.0",
 ]
 
 [dependency-groups]
