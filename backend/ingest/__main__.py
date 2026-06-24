@@ -7,8 +7,10 @@ Usage:
 
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -23,7 +25,6 @@ async def main():
     """Load all TARI JSON files → chunk → embed → store in pgvector."""
 
     # Database setup (use env var or default to docker-compose stack)
-    import os
     db_url = os.getenv(
         "DATABASE_URL",
         "postgresql+asyncpg://postgres:postgres@localhost:5432/tari_db"
@@ -39,8 +40,13 @@ async def main():
         engine, class_=AsyncSession, expire_on_commit=False
     )
 
+    # Truncate existing documents before re-ingesting
+    async with engine.begin() as conn:
+        await conn.execute(text("TRUNCATE TABLE documents RESTART IDENTITY"))
+    print("Truncated existing documents.")
+
     # Ingest all TARI JSON files
-    data_dir = Path(__file__).parent.parent.parent / "data"
+    data_dir = Path(os.getenv("DATA_DIR", str(Path(__file__).parent.parent / "data")))
     json_files = list(data_dir.glob("tari_*.json"))
 
     print(f"Found {len(json_files)} TARI files to ingest...")

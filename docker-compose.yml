@@ -13,41 +13,60 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
       timeout: 5s
       retries: 5
 
   # Ollama for embeddings
   ollama:
-    image: ollama/ollama:latest
+    build:
+      context: .
+      dockerfile: ./ollama.Dockerfile
     container_name: tari_ollama
     ports:
       - "11434:11434"
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
     volumes:
-      - ollama_data:/root/.ollama
+      - ~/.ollama:/root/.ollama
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 10s
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
       timeout: 5s
       retries: 5
+      start_period: 60s
 
-  # Backend API (optional, commented out for now)
-  # backend:
-  #   build: ./backend
-  #   container_name: tari_backend
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/tari_db
-  #     OLLAMA_BASE_URL: http://ollama:11434
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #     ollama:
-  #       condition: service_healthy
-  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  corpus-loader:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: tari_corpus_loader
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/tari_db
+      OLLAMA_BASE_URL: http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "ingest"]
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: tari_backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/tari_db
+      OLLAMA_BASE_URL: http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      corpus-loader:
+        condition: service_completed_successfully
+
 
   # Frontend (optional, commented out for now)
   # frontend:
