@@ -55,10 +55,11 @@ def test_double_book_different_citizen_returns_slot_unavailable():
     assert result["status"] == "slot_unavailable"
 
 
-def test_booked_slots_for_returns_reserved_times():
+@pytest.mark.asyncio
+async def test_booked_slots_for_returns_reserved_times():
     store = AppointmentStore()
     store.book(**SLOT, **CITIZEN)
-    booked = store.booked_slots_for(SLOT["office"], SLOT["date"])
+    booked = await store.booked_slots_for(SLOT["office"], SLOT["date"])
     assert SLOT["time"] in booked
 
 

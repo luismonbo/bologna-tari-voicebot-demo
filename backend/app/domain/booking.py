@@ -75,7 +75,7 @@ class AppointmentStore:
             return {"status": "not_found", "appointment": None}
         return {"status": "found", "appointment": asdict(matches[-1])}
 
-    def booked_slots_for(self, office: str, date: str) -> set[str]:
+    async def booked_slots_for(self, office: str, date: str) -> set[str]:
         return {
             appt.time
             for appt in self._by_code.values()

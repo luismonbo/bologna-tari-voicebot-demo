@@ -31,7 +31,7 @@ PAST_DATE = "2020-01-01"
 def client():
     store = AppointmentStore()
 
-    def override_get_store():
+    async def override_get_store():
         yield store
 
     app.dependency_overrides[get_store] = override_get_store
