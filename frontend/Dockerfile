@@ -1,9 +1,10 @@
 FROM node:20-alpine AS builder
+ARG VITE_BACKEND_URL=http://backend:8000
 WORKDIR /app
 COPY package.json package-lock.json* npm-shrinkwrap.json* ./
 RUN npm ci || npm install
 COPY . .
-RUN npm run build
+RUN VITE_BACKEND_URL=$VITE_BACKEND_URL npm run build
 
 FROM node:20-alpine
 WORKDIR /app

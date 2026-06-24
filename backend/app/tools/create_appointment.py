@@ -27,7 +27,7 @@ async def create_appointment(req: CreateRequest, store: AppointmentStore = Depen
         parse_iso_time(req.time)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
-    return store.book(
+    return await store.book(
         office=req.office.lower(),
         date=req.date,
         time=req.time,

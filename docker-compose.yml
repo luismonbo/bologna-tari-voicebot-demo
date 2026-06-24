@@ -71,12 +71,13 @@ services:
 
   # Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_BACKEND_URL: http://localhost:8000
     container_name: tari_frontend
     ports:
       - "5173:5173"
-    environment:
-      VITE_BACKEND_URL: http://backend:8000
     depends_on:
       - backend
 

@@ -22,5 +22,5 @@ async def check_availability(req: AvailabilityRequest, store: AppointmentStore =
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     office = req.office.lower()
-    booked = store.booked_slots_for(office, req.date)
+    booked = await store.booked_slots_for(office, req.date)
     return availability.check_availability(office, req.date, booked)
