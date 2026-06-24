@@ -44,7 +44,7 @@ async def get_recent_calls(limit: int = 10):
         raise HTTPException(status_code=500, detail="Vapi API key not configured")
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 "https://api.vapi.ai/call",
                 headers={"Authorization": f"Bearer {vapi_key}"},
@@ -53,7 +53,8 @@ async def get_recent_calls(limit: int = 10):
             response.raise_for_status()
 
             calls_data = response.json()
-            calls = calls_data.get("calls", [])
+            # Vapi returns an array directly, not wrapped in a "calls" key
+            calls = calls_data if isinstance(calls_data, list) else []
 
             return {
                 "calls": [
@@ -61,14 +62,17 @@ async def get_recent_calls(limit: int = 10):
                         "id": call.get("id"),
                         "timestamp": call.get("createdAt"),
                         "duration": call.get("duration", 0),
-                        "citizen_name": call.get("customer", {}).get("name"),
+                        "citizen_name": call.get("customer") if isinstance(call.get("customer"), str) and call.get("customer") else None,
                         "result": determine_call_result(call),
                     }
                     for call in calls
                 ]
             }
-    except httpx.HTTPError as e:
-        detail = f"Failed to fetch calls from Vapi: {str(e)}"
+    except httpx.HTTPStatusError as e:
+        detail = f"Vapi API error {e.response.status_code}: {e.response.text}"
+        raise HTTPException(status_code=502, detail=detail)
+    except Exception as e:
+        detail = f"Error fetching calls: {str(e)}"
         raise HTTPException(status_code=502, detail=detail)
 
 
@@ -92,10 +96,23 @@ async def get_call_transcript(call_id: str):
 
             transcript = []
             for msg in messages:
-                role = "citizen" if msg.get("role") == "user" else "assistant"
-                text = msg.get("content", "")
+                role = msg.get("role", "")
+                # Only include user and bot conversation messages
+                if role not in ("user", "bot"):
+                    continue
+
+                # Map Vapi roles to frontend roles
+                if role == "user":
+                    mapped_role = "citizen"
+                elif role == "bot":
+                    mapped_role = "assistant"
+                else:
+                    continue
+
+                # Vapi messages use "message" field, not "content"
+                text = msg.get("message", "")
                 if text:
-                    transcript.append({"role": role, "text": text})
+                    transcript.append({"role": mapped_role, "text": text})
 
             return {
                 "transcript": transcript,
@@ -111,9 +128,22 @@ async def get_call_transcript(call_id: str):
 
 
 def determine_call_result(call: dict) -> str:
-    """Determine call result based on call data."""
-    if "appointment" in call and call.get("appointment"):
-        return "booked"
-    if call.get("status") == "completed":
+    """Determine call result based on Vapi call data.
+
+    Mark calls with actual conversation messages as 'info'.
+    Vapi uses "bot"/"user" roles in messages, plus system/tool messages.
+    """
+    messages = call.get("messages", [])
+
+    # Filter for actual conversation messages (user/bot), not system or tool calls
+    conversation_messages = [
+        m for m in messages
+        if m.get("role") in ("user", "bot") and m.get("message")
+    ]
+
+    # If there are conversation messages, it was a meaningful call
+    if conversation_messages:
         return "info"
+
+    # Otherwise it's an error/abandoned call
     return "error"

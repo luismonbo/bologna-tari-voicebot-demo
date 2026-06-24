@@ -19,3 +19,6 @@ docs/
 
 # Frontend
 frontend/node_modules/
+
+# Development scripts
+scripts/
