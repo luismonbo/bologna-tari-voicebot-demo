@@ -30,6 +30,7 @@ async def get_appointments(db: AsyncSession = Depends(get_db)):
                 "time": a.time,
                 "citizen_name": a.citizen_name,
                 "contact": a.contact,
+                "reason": a.reason,
             }
             for a in appointments
         ]

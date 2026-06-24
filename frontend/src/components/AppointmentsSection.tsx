@@ -6,6 +6,7 @@ interface Appointment {
   time: string
   citizen_name: string
   contact: string
+  reason?: string
 }
 
 interface AppointmentsResponse {
@@ -49,6 +50,7 @@ export function AppointmentsSection() {
                 <th>Orario</th>
                 <th>Nome Cittadino</th>
                 <th>Contatto</th>
+                <th>Motivo</th>
               </tr>
             </thead>
             <tbody>
@@ -59,6 +61,7 @@ export function AppointmentsSection() {
                   <td>{appt.time}</td>
                   <td>{appt.citizen_name}</td>
                   <td>{appt.contact}</td>
+                  <td>{appt.reason || '—'}</td>
                 </tr>
               ))}
             </tbody>
