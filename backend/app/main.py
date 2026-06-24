@@ -1,8 +1,16 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.tools import check_availability, create_appointment, lookup_appointment, query_services
+from app.routes import frontend
+from app.tools import (
+    check_availability,
+    create_appointment,
+    lookup_appointment,
+    query_services,
+)
 
 
 @asynccontextmanager
@@ -13,8 +21,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Bologna TARI Voicebot — Tool Backend", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://frontend:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(query_services.router, prefix="/tools")
 app.include_router(check_availability.router, prefix="/tools")
 app.include_router(create_appointment.router, prefix="/tools")
 app.include_router(lookup_appointment.router, prefix="/tools")
+app.include_router(frontend.router)
