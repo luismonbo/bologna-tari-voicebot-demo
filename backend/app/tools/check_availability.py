@@ -15,12 +15,12 @@ class AvailabilityRequest(BaseModel):
 
 
 @router.post("/check_availability")
-def check_availability(req: AvailabilityRequest, store: AppointmentStore = Depends(get_store)) -> dict:
+async def check_availability(req: AvailabilityRequest, store: AppointmentStore = Depends(get_store)) -> dict:
     try:
         d = parse_iso_date(req.date)
         validate_future_date(d)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     office = req.office.lower()
-    booked = store.booked_slots_for(office, req.date)
+    booked = await store.booked_slots_for(office, req.date)
     return availability.check_availability(office, req.date, booked)

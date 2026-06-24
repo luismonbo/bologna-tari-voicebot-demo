@@ -1,17 +1,24 @@
 import os
-from sqlalchemy import create_engine, Column, String, Text, DateTime, UniqueConstraint, Index, Integer, func
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy import Column, String, Text, DateTime, UniqueConstraint, Index, Integer, func, create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
 from pgvector.sqlalchemy import Vector
 from datetime import datetime, UTC
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg://user:password@db:5432/tari")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+asyncpg://user:password@db:5432/tari")
 
-engine = create_engine(
+engine = create_async_engine(
     DATABASE_URL,
     echo=False,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 Base = declarative_base()
 
 
@@ -47,11 +54,7 @@ class DocumentModel(Base):
     )
 
 
-def init_db():
+async def init_db():
     """Create all tables."""
-    Base.metadata.create_all(bind=engine)
-
-
-def get_session() -> Session:
-    """Get a database session."""
-    return SessionLocal()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

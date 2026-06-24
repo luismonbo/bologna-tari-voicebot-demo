@@ -11,5 +11,5 @@ class QueryRequest(BaseModel):
 
 
 @router.post("/query_services")
-def query_services(req: QueryRequest) -> dict:
-    return rag.query(req.question)
+async def query_services(req: QueryRequest) -> dict:
+    return await rag.query(req.question)

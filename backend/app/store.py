@@ -1,13 +1,13 @@
-from typing import Generator
+from typing import AsyncGenerator
 from app.database import SessionLocal
 from app.domain.postgres_store import PostgresAppointmentStore
 from app.domain.booking import AppointmentStore
 
 
-def get_store() -> Generator[AppointmentStore, None, None]:
+async def get_store() -> AsyncGenerator[AppointmentStore, None]:
     """Dependency: returns a Postgres-backed store for the request, cleans up after."""
     session = SessionLocal()
     try:
         yield PostgresAppointmentStore(session)
     finally:
-        session.close()
+        await session.close()

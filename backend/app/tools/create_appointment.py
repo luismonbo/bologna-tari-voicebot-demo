@@ -20,14 +20,14 @@ class CreateRequest(BaseModel):
 
 
 @router.post("/create_appointment")
-def create_appointment(req: CreateRequest, store: AppointmentStore = Depends(get_store)) -> dict:
+async def create_appointment(req: CreateRequest, store: AppointmentStore = Depends(get_store)) -> dict:
     try:
         d = parse_iso_date(req.date)
         validate_future_date(d)
         parse_iso_time(req.time)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
-    return store.book(
+    return await store.book(
         office=req.office.lower(),
         date=req.date,
         time=req.time,

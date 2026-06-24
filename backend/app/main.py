@@ -7,7 +7,7 @@ from app.tools import check_availability, create_appointment, lookup_appointment
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    await init_db()
     yield
 
 

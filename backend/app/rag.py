@@ -1,90 +1,73 @@
-# Phase 1: hardcoded TARI chunks + keyword-overlap retrieval.
-# Phase 2 (§12 step 5): replace _score() with pgvector cosine similarity
-# using the same multilingual embedding model used at ingestion time.
+"""RAG retrieval via pgvector similarity search."""
 
-_CHUNKS = [
-    {
-        "text": (
-            "La TARI (Tassa sui Rifiuti) è il tributo comunale che finanzia il servizio "
-            "di raccolta e smaltimento dei rifiuti solidi urbani. È dovuta da chiunque "
-            "possieda o detenga locali o aree scoperte suscettibili di produrre rifiuti."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari",
-    },
-    {
-        "text": (
-            "Il pagamento della TARI avviene tramite avvisi di pagamento inviati dal Comune. "
-            "È possibile pagare online tramite il portale del Comune, presso gli sportelli "
-            "bancari abilitati, agli uffici postali, oppure con modello F24."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari/pagamento",
-    },
-    {
-        "text": (
-            "Le scadenze TARI vengono comunicate annualmente tramite gli avvisi di pagamento. "
-            "Di norma sono previste due o tre rate nel corso dell'anno. "
-            "Le date esatte sono riportate sull'avviso ricevuto a casa."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari/scadenze",
-    },
-    {
-        "text": (
-            "Per richiedere riduzioni o esenzioni TARI (ad esempio per locali non utilizzati, "
-            "compostaggio domestico, o situazioni di difficoltà economica) è necessario "
-            "presentare apposita istanza all'Ufficio Tributi del Comune."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari/riduzioni",
-    },
-    {
-        "text": (
-            "In caso di cambio di residenza, vendita dell'immobile, oppure inizio o "
-            "cessazione dell'attività, è obbligatorio presentare una dichiarazione di "
-            "variazione TARI entro 90 giorni dall'evento all'Ufficio Tributi."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari/dichiarazioni",
-    },
-    {
-        "text": (
-            "La tariffa TARI è composta da una parte fissa (basata sulla superficie "
-            "dell'immobile) e una parte variabile (basata sul numero di occupanti). "
-            "Le tariffe sono deliberate annualmente dal Consiglio Comunale."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari/tariffe",
-    },
-    {
-        "text": (
-            "Per contestare un avviso TARI ritenuto errato è possibile presentare ricorso "
-            "al Comune entro 60 giorni dalla notifica, oppure rivolgersi al Giudice Tributario "
-            "entro 30 giorni. È consigliabile contattare prima l'Ufficio Tributi per un chiarimento."
-        ),
-        "source_url": "https://www.comune.bologna.it/servizi-informazioni/tari/ricorsi",
-    },
-    {
-        "text": (
-            "L'Ufficio Tributi del Comune di Bologna gestisce la TARI e altri tributi locali. "
-            "Per informazioni o appuntamenti è possibile contattare lo sportello telefonico "
-            "o prenotare un appuntamento tramite questo servizio."
-        ),
-        "source_url": "https://www.comune.bologna.it/ufficio-tributi",
-    },
-]
+from sqlalchemy import select
+
+from app.database import DocumentModel, SessionLocal
+from ingest.embedder import OllamaEmbedder
 
 
-def _score(question_lower: str, chunk_text: str) -> float:
-    words = set(question_lower.split())
-    chunk_words = set(chunk_text.lower().split())
-    overlap = len(words & chunk_words)
-    return overlap / max(len(words), 1)
+_embedder = OllamaEmbedder()
 
 
-def query(question: str, top_k: int = 3) -> dict:
-    question_lower = question.lower()
-    scored = [
-        {**chunk, "score": round(_score(question_lower, chunk["text"]), 4)}
-        for chunk in _CHUNKS
-    ]
-    scored = [c for c in scored if c["score"] > 0]
-    scored.sort(key=lambda c: c["score"], reverse=True)
-    top = scored[:top_k]
-    context = "\n\n".join(c["text"] for c in top)
-    return {"context": context, "chunks": top}
+async def _embed_question(question: str) -> list[float]:
+    """Embed a user question using Ollama."""
+    return await _embedder.embed(question)
+
+
+async def _retrieve_similar(
+    embedding: list[float],
+    top_k: int = 3,
+) -> list[dict]:
+    """
+    Retrieve top-K similar documents via pgvector cosine similarity.
+
+    Cosine distance is computed via the <=> operator in pgvector.
+    We order by distance ascending to get highest similarity first.
+    """
+    session = SessionLocal()
+    try:
+        stmt = (
+            select(
+                DocumentModel.chunk_text,
+                DocumentModel.source_url,
+                (1 - (DocumentModel.embedding.cosine_distance(embedding)))
+                .label("similarity"),
+            )
+            .order_by(
+                DocumentModel.embedding.cosine_distance(embedding).asc()
+            )
+            .limit(top_k)
+        )
+
+        result = await session.execute(stmt)
+        rows = result.fetchall()
+
+        return [
+            {
+                "text": row.chunk_text,
+                "source_url": row.source_url,
+                "score": round(float(row.similarity), 4),
+            }
+            for row in rows
+        ]
+    finally:
+        await session.close()
+
+
+async def query(question: str, top_k: int = 3, min_similarity: float = 0.5) -> dict:
+    """
+    Query TARI knowledge base via pgvector similarity search.
+
+    Args:
+        question: User question in Italian
+        top_k: Number of top results to return
+        min_similarity: Minimum cosine similarity score (0-1) to include a result
+
+    Returns:
+        dict with "context" (joined text) and "chunks" (list of results)
+    """
+    embedding = await _embed_question(question)
+    chunks = await _retrieve_similar(embedding, top_k)
+    relevant = [c for c in chunks if c["score"] >= min_similarity]
+    context = "\n\n".join(c["text"] for c in relevant)
+    return {"context": context, "chunks": relevant}
