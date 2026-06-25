@@ -12,7 +12,6 @@ wheels/
 # Claude
 .Claude
 CLAUDE.md
-PLAN.md
 docs/
 # Secrets
 .env
