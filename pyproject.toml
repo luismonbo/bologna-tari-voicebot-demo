@@ -22,6 +22,8 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "ruff",
+    "python-dotenv",
+    "requests",
 ]
 
 [tool.pytest.ini_options]
