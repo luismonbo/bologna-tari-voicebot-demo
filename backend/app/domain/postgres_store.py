@@ -65,7 +65,7 @@ class PostgresAppointmentStore:
 
     async def lookup_by_name(self, citizen_name: str, date: Optional[str] = None) -> dict:
         stmt = select(AppointmentModel).where(
-            AppointmentModel.citizen_name.ilike(citizen_name)
+            AppointmentModel.citizen_name == citizen_name
         )
         if date:
             stmt = stmt.where(AppointmentModel.date == date)
