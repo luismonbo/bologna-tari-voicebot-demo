@@ -1,0 +1,8 @@
+.pytest_cache
+.claude
+.ruff_cache
+scripts/
+CLAUDE.md
+DEVLOG.md
+docker-compose.test.yml
+system_prompt.md
