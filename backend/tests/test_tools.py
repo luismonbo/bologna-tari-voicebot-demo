@@ -6,7 +6,7 @@ VALID_BOOKING = {
     "date": FUTURE_WEEKDAY,
     "time": "09:00",
     "citizen_name": "Mario Rossi",
-    "contact": "mario@example.com",
+    "contact": "+393912345678",
     "reason": "Chiarimenti TARI",
 }
 
@@ -96,22 +96,24 @@ def test_create_appointment_idempotent_same_code(client):
 
 def test_create_appointment_double_book_returns_slot_unavailable(client):
     client.post("/tools/create_appointment", json=VALID_BOOKING)
-    other = {**VALID_BOOKING, "citizen_name": "Lucia Bianchi", "contact": "lucia@example.com"}
+    other = {**VALID_BOOKING, "citizen_name": "Lucia Bianchi", "contact": "+393987654321"}
     r = client.post("/tools/create_appointment", json=other)
     assert r.status_code == 200
     assert r.json()["status"] == "slot_unavailable"
 
 
-def test_create_appointment_past_date_returns_422(client):
+def test_create_appointment_past_date_returns_validation_error(client):
     bad = {**VALID_BOOKING, "date": PAST_DATE}
     r = client.post("/tools/create_appointment", json=bad)
-    assert r.status_code == 422
+    assert r.status_code == 200
+    assert r.json()["status"] == "validation_error"
 
 
-def test_create_appointment_invalid_time_format_returns_422(client):
+def test_create_appointment_invalid_time_format_returns_validation_error(client):
     bad = {**VALID_BOOKING, "time": "9am"}
     r = client.post("/tools/create_appointment", json=bad)
-    assert r.status_code == 422
+    assert r.status_code == 200
+    assert r.json()["status"] == "validation_error"
 
 
 def test_create_appointment_missing_field_returns_422(client):

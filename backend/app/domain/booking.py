@@ -26,7 +26,7 @@ class AppointmentStore:
         self._by_code: dict[str, Appointment] = {}
         self._slot_index: dict[tuple, str] = {}  # (office, date, time) → code
 
-    def book(
+    async def book(
         self,
         office: str,
         date: str,
@@ -64,7 +64,7 @@ class AppointmentStore:
             return {"status": "not_found", "appointment": None}
         return {"status": "found", "appointment": asdict(appt)}
 
-    def lookup_by_name(self, citizen_name: str, date: Optional[str] = None) -> dict:
+    async def lookup_by_name(self, citizen_name: str, date: Optional[str] = None) -> dict:
         matches = [
             appt
             for appt in self._by_code.values()

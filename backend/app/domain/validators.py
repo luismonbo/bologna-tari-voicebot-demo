@@ -33,10 +33,10 @@ def validate_italian_phone(phone: str) -> tuple[bool, Optional[str]]:
     Validate Italian phone number.
 
     Accepts:
-    - +39 followed by 9-10 digits
-    - 0039 followed by 9-10 digits
-    - 39 followed by 9-10 digits
-    - 0 followed by 9-10 digits (landline/mobile)
+    - Mobile numbers: 3XX XXXXXXX (10 digits starting with 3)
+    - Landline numbers: 0XX XXXXXX (10 digits starting with 0)
+    - With country code: +39 or 0039 prefixes
+    - Flexible formatting with spaces, hyphens, parentheses
 
     Returns: (is_valid, error_message)
     """
@@ -60,10 +60,11 @@ def validate_italian_phone(phone: str) -> tuple[bool, Optional[str]]:
         return False, "Numero di telefono contiene caratteri non validi"
 
     # Italian patterns:
-    # +39 9xx xxxxxxx (14 total)
-    # 0039 9xx xxxxxxx (12 total)
-    # 09xx xxxxxxx (10 total)
-    italian_pattern = r"^(\+39|0039|0)[0-9]{7,11}$"
+    # +39 followed by 9-10 digits (mobile/landline with country code)
+    # 0039 followed by 9-10 digits
+    # 3XX XXXXXXX (10 digits, mobile number)
+    # 0XX XXXXXX (10 digits, landline)
+    italian_pattern = r"^(\+39|0039|3)[0-9]{8,10}$|^0[0-9]{8,10}$"
 
     if re.match(italian_pattern, normalized):
         return True, None
@@ -86,6 +87,7 @@ def normalize_italian_phone(phone: str) -> str:
     Normalize Italian phone number to consistent format: +39 XXX XXXXXX or +39 9XX XXXXXX
 
     Takes any valid Italian phone format and converts to +39 followed by digits with standard spacing.
+    Handles numbers with or without country code prefix.
     """
     if not phone:
         return ""
@@ -106,6 +108,7 @@ def normalize_italian_phone(phone: str) -> str:
         normalized = normalized[2:]  # Remove 39
     elif normalized.startswith("0"):
         normalized = normalized[1:]  # Remove leading 0
+    # else: already in format 3XX... (mobile) or similar, keep as is
 
     # Add +39 prefix
     return f"+39{normalized}"

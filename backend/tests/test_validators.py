@@ -111,9 +111,18 @@ class TestPhoneValidation:
         valid, error = validate_italian_phone("(123) 456-7890")  # US format
         assert valid is False
 
-    def test_invalid_italian_prefix_rejected(self):
-        valid, error = validate_italian_phone("3912345678")  # Missing 0 or +39
-        assert valid is False
+    def test_valid_plain_mobile_number(self):
+        valid, error = validate_italian_phone("3312345678")  # Plain mobile (3XX XXXXXXX)
+        assert valid is True
+        assert error is None
+
+    def test_valid_plain_mobile_with_spaces(self):
+        valid, error = validate_italian_phone("33 1234 5678")
+        assert valid is True
+
+    def test_valid_plain_landline_number(self):
+        valid, error = validate_italian_phone("0512345678")  # Plain landline (0XX XXXXXX)
+        assert valid is True
 
 
 class TestPhoneNormalization:
@@ -142,6 +151,18 @@ class TestPhoneNormalization:
         once = normalize_italian_phone("09 12 34 56 78")
         twice = normalize_italian_phone(once)
         assert once == twice
+
+    def test_normalize_plain_mobile_number(self):
+        result = normalize_italian_phone("3312345678")
+        assert result == "+393312345678"
+
+    def test_normalize_plain_mobile_with_spaces(self):
+        result = normalize_italian_phone("33 1234 5678")
+        assert result == "+393312345678"
+
+    def test_normalize_plain_landline_number(self):
+        result = normalize_italian_phone("0512345678")
+        assert result == "+39512345678"
 
 
 class TestSanitization:

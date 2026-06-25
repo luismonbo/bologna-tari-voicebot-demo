@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -34,6 +35,14 @@ def client():
     async def override_get_store():
         yield store
 
-    app.dependency_overrides[get_store] = override_get_store
-    yield TestClient(app)
-    app.dependency_overrides.clear()
+    # Mock the Ollama embedder to avoid requiring running Ollama service
+    mock_embed = AsyncMock(return_value=[0.1] * 768)
+
+    # Mock pgvector retrieval to return empty results (allows tests to run without DB)
+    mock_retrieve = AsyncMock(return_value=[])
+
+    with patch("app.rag._embedder.embed", mock_embed), \
+         patch("app.rag._retrieve_similar", mock_retrieve):
+        app.dependency_overrides[get_store] = override_get_store
+        yield TestClient(app)
+        app.dependency_overrides.clear()
