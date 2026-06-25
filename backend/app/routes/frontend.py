@@ -1,11 +1,17 @@
+import logging
 import os
+import re
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AppointmentModel, SessionLocal
+
+logger = logging.getLogger(__name__)
+
+UUID_PATTERN = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 
 router = APIRouter()
 
@@ -38,7 +44,7 @@ async def get_appointments(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/calls/recent")
-async def get_recent_calls(limit: int = 10):
+async def get_recent_calls(limit: int = Query(default=10, ge=1, le=10)):
     """Fetch recent calls from Vapi API."""
     vapi_key = os.environ.get("VAPI_PRIVATE_API_KEY")
     if not vapi_key:
@@ -62,7 +68,7 @@ async def get_recent_calls(limit: int = 10):
                     {
                         "id": call.get("id"),
                         "timestamp": call.get("createdAt"),
-                        "duration": call.get("duration", 0),
+                        "duration": extract_duration(call),
                         "citizen_name": call.get("customer") if isinstance(call.get("customer"), str) and call.get("customer") else None,
                         "result": determine_call_result(call),
                     }
@@ -70,16 +76,19 @@ async def get_recent_calls(limit: int = 10):
                 ]
             }
     except httpx.HTTPStatusError as e:
-        detail = f"Vapi API error {e.response.status_code}: {e.response.text}"
-        raise HTTPException(status_code=502, detail=detail)
+        logger.error("Vapi API error %s: %s", e.response.status_code, e.response.text)
+        raise HTTPException(status_code=502, detail="Errore nel recupero delle chiamate")
     except Exception as e:
-        detail = f"Error fetching calls: {str(e)}"
-        raise HTTPException(status_code=502, detail=detail)
+        logger.error("Error fetching calls: %s", str(e))
+        raise HTTPException(status_code=502, detail="Errore nel recupero delle chiamate")
 
 
 @router.get("/call/{call_id}/transcript")
 async def get_call_transcript(call_id: str):
     """Fetch transcript for a specific call from Vapi API."""
+    if not UUID_PATTERN.match(call_id):
+        raise HTTPException(status_code=422, detail="Formato call_id non valido")
+
     vapi_key = os.environ.get("VAPI_PRIVATE_API_KEY")
     if not vapi_key:
         raise HTTPException(status_code=500, detail="Vapi API key not configured")
@@ -118,14 +127,28 @@ async def get_call_transcript(call_id: str):
             return {
                 "transcript": transcript,
                 "metadata": {
-                    "duration": call_data.get("duration", 0),
+                    "duration": extract_duration(call_data),
                     "timestamp": call_data.get("createdAt"),
                     "citizen_name": call_data.get("customer", {}).get("name"),
                 },
             }
     except httpx.HTTPError as e:
-        detail = f"Failed to fetch transcript from Vapi: {str(e)}"
-        raise HTTPException(status_code=502, detail=detail)
+        logger.error("Failed to fetch transcript from Vapi: %s", str(e))
+        raise HTTPException(status_code=502, detail="Errore nel recupero della trascrizione")
+
+
+def extract_duration(call: dict) -> int:
+    """Extract duration in seconds from Vapi call data.
+
+    Vapi stores duration in the costs array under the 'minutes' key.
+    We convert minutes to seconds for consistent formatting.
+    """
+    costs = call.get("costs", [])
+    if costs and isinstance(costs, list) and len(costs) > 0:
+        minutes = costs[0].get("minutes", 0)
+        # Convert minutes to seconds
+        return int(minutes * 60)
+    return 0
 
 
 def determine_call_result(call: dict) -> str:
