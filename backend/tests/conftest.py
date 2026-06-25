@@ -2,11 +2,10 @@ from datetime import date, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
-
+from app.domain.booking import InMemoryAppointmentStore
 from app.main import app
-from app.domain.booking import AppointmentStore
 from app.store import get_store
+from fastapi.testclient import TestClient
 
 
 def _next_weekday(min_days_ahead: int = 7) -> str:
@@ -30,7 +29,7 @@ PAST_DATE = "2020-01-01"
 
 @pytest.fixture
 def client():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
 
     async def override_get_store():
         yield store
@@ -41,8 +40,10 @@ def client():
     # Mock pgvector retrieval to return empty results (allows tests to run without DB)
     mock_retrieve = AsyncMock(return_value=[])
 
-    with patch("app.rag._embedder.embed", mock_embed), \
-         patch("app.rag._retrieve_similar", mock_retrieve):
+    with (
+        patch("app.rag._embedder.embed", mock_embed),
+        patch("app.rag._retrieve_similar", mock_retrieve),
+    ):
         app.dependency_overrides[get_store] = override_get_store
         yield TestClient(app)
         app.dependency_overrides.clear()

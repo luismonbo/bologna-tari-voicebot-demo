@@ -1,15 +1,16 @@
 from dataclasses import asdict
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AppointmentModel
-from app.domain.booking import Appointment, make_idempotency_key
+from app.domain.booking import Appointment, AppointmentStore, make_idempotency_key
 
 
-class PostgresAppointmentStore:
+class PostgresAppointmentStore(AppointmentStore):
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -64,8 +65,11 @@ class PostgresAppointmentStore:
         return {"status": "found", "appointment": asdict(appt)}
 
     async def lookup_by_name(self, citizen_name: str, date: Optional[str] = None) -> dict:
+        # Case-insensitive exact match: names are stored with their original
+        # casing, but the agent/ASR will not preserve it on lookup. Exact
+        # equality (not LIKE) keeps the wildcard-injection guard intact.
         stmt = select(AppointmentModel).where(
-            AppointmentModel.citizen_name == citizen_name
+            func.lower(AppointmentModel.citizen_name) == citizen_name.lower()
         )
         if date:
             stmt = stmt.where(AppointmentModel.date == date)
@@ -82,8 +86,7 @@ class PostgresAppointmentStore:
 
     async def booked_slots_for(self, office: str, date: str) -> set[str]:
         stmt = select(AppointmentModel).where(
-            AppointmentModel.office == office,
-            AppointmentModel.date == date
+            AppointmentModel.office == office, AppointmentModel.date == date
         )
         result = await self.session.execute(stmt)
         models = result.scalars().all()

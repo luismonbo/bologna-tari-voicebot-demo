@@ -1,7 +1,7 @@
 import hashlib
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, UTC
-from typing import Optional
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
+from typing import Optional, Protocol, runtime_checkable
 
 
 def make_idempotency_key(office: str, date: str, time: str, citizen_name: str) -> str:
@@ -21,7 +21,34 @@ class Appointment:
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
-class AppointmentStore:
+@runtime_checkable
+class AppointmentStore(Protocol):
+    """Persistence contract shared by every appointment store implementation.
+
+    Both the in-memory and the SQLAlchemy-backed stores conform to this, so the
+    tool endpoints depend on the abstraction rather than a concrete store. The
+    shared contract is exercised in ``tests/test_store_contract.py`` against
+    both implementations to keep them from drifting apart.
+    """
+
+    async def book(
+        self,
+        office: str,
+        date: str,
+        time: str,
+        citizen_name: str,
+        contact: str,
+        reason: Optional[str],
+    ) -> dict: ...
+
+    async def lookup_by_name(self, citizen_name: str, date: Optional[str] = None) -> dict: ...
+
+    async def booked_slots_for(self, office: str, date: str) -> set[str]: ...
+
+
+class InMemoryAppointmentStore(AppointmentStore):
+    """In-memory store used for fast unit tests and local runs without a DB."""
+
     def __init__(self):
         self._by_code: dict[str, Appointment] = {}
         self._slot_index: dict[tuple, str] = {}  # (office, date, time) → code

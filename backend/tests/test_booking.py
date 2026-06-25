@@ -1,6 +1,6 @@
 import pytest
+from app.domain.booking import InMemoryAppointmentStore, make_idempotency_key
 
-from app.domain.booking import AppointmentStore, make_idempotency_key
 from tests.conftest import FUTURE_WEEKDAY
 
 SLOT = {"office": "tributi", "date": FUTURE_WEEKDAY, "time": "09:00"}
@@ -26,7 +26,7 @@ def test_different_params_produce_different_keys():
 
 @pytest.mark.asyncio
 async def test_happy_path_booking_confirmed():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     result = await store.book(**SLOT, **CITIZEN)
     assert result["status"] == "confirmed"
     assert "confirmation_code" in result
@@ -35,15 +35,17 @@ async def test_happy_path_booking_confirmed():
 
 @pytest.mark.asyncio
 async def test_confirmation_code_matches_idempotency_key():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     result = await store.book(**SLOT, **CITIZEN)
-    expected = make_idempotency_key(SLOT["office"], SLOT["date"], SLOT["time"], CITIZEN["citizen_name"])
+    expected = make_idempotency_key(
+        SLOT["office"], SLOT["date"], SLOT["time"], CITIZEN["citizen_name"]
+    )
     assert result["confirmation_code"] == expected
 
 
 @pytest.mark.asyncio
 async def test_same_params_returns_same_code():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     result1 = await store.book(**SLOT, **CITIZEN)
     result2 = await store.book(**SLOT, **CITIZEN)
     assert result1["confirmation_code"] == result2["confirmation_code"]
@@ -52,7 +54,7 @@ async def test_same_params_returns_same_code():
 
 @pytest.mark.asyncio
 async def test_double_book_different_citizen_returns_slot_unavailable():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     await store.book(**SLOT, **CITIZEN)
     other = {**CITIZEN, "citizen_name": "Lucia Bianchi"}
     result = await store.book(**SLOT, **other)
@@ -61,7 +63,7 @@ async def test_double_book_different_citizen_returns_slot_unavailable():
 
 @pytest.mark.asyncio
 async def test_booked_slots_for_returns_reserved_times():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     await store.book(**SLOT, **CITIZEN)
     booked = await store.booked_slots_for(SLOT["office"], SLOT["date"])
     assert SLOT["time"] in booked
@@ -69,7 +71,7 @@ async def test_booked_slots_for_returns_reserved_times():
 
 @pytest.mark.asyncio
 async def test_lookup_by_code_found():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     result = await store.book(**SLOT, **CITIZEN)
     code = result["confirmation_code"]
     lookup = store.lookup_by_code(code)
@@ -78,7 +80,7 @@ async def test_lookup_by_code_found():
 
 
 def test_lookup_by_code_not_found():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     lookup = store.lookup_by_code("nonexistent")
     assert lookup["status"] == "not_found"
     assert lookup["appointment"] is None
@@ -86,7 +88,7 @@ def test_lookup_by_code_not_found():
 
 @pytest.mark.asyncio
 async def test_lookup_by_name_found():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     await store.book(**SLOT, **CITIZEN)
     lookup = await store.lookup_by_name(CITIZEN["citizen_name"])
     assert lookup["status"] == "found"
@@ -94,14 +96,14 @@ async def test_lookup_by_name_found():
 
 @pytest.mark.asyncio
 async def test_lookup_by_name_not_found():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     lookup = await store.lookup_by_name("Nessuno Esistente")
     assert lookup["status"] == "not_found"
 
 
 @pytest.mark.asyncio
 async def test_lookup_by_name_and_date():
-    store = AppointmentStore()
+    store = InMemoryAppointmentStore()
     await store.book(**SLOT, **CITIZEN)
     lookup = await store.lookup_by_name(CITIZEN["citizen_name"], date=SLOT["date"])
     assert lookup["status"] == "found"

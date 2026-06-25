@@ -15,5 +15,8 @@ class LookupRequest(BaseModel):
 
 
 @router.post("/lookup_appointment")
-async def lookup_appointment(req: LookupRequest, store: AppointmentStore = Depends(get_store)) -> dict:
-    return await store.lookup_by_name(req.citizen_name.lower(), date=req.date)
+async def lookup_appointment(
+    req: LookupRequest, store: AppointmentStore = Depends(get_store)
+) -> dict:
+    # Case-normalization is the store's responsibility (see AppointmentStore).
+    return await store.lookup_by_name(req.citizen_name, date=req.date)
