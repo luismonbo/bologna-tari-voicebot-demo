@@ -1,11 +1,9 @@
-import pytest
-
 from app.domain.validators import (
-    validate_citizen_name,
-    validate_italian_phone,
+    normalize_italian_phone,
     sanitize_citizen_name,
     sanitize_contact,
-    normalize_italian_phone,
+    validate_citizen_name,
+    validate_italian_phone,
 )
 
 

@@ -1,7 +1,8 @@
 """Ollama embedding via open-source models."""
 
-import httpx
 import os
+
+import httpx
 
 
 class OllamaEmbedder:

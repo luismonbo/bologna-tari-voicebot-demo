@@ -1,10 +1,10 @@
-import pytest
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, patch, MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from ingest.pipeline import ingest_json_file
-from app.database import DocumentModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def sample_tari_json(tmp_path):
         3. Step 3
 
         ## Payment Methods
-        You can pay online or in person."""
+        You can pay online or in person.""",
     }
     json_file = tmp_path / "test_tari.json"
     json_file.write_text(json.dumps(data))
@@ -40,9 +40,10 @@ class TestIngestPipeline:
     @pytest.mark.asyncio
     async def test_loads_json_file(self, sample_tari_json, mock_db_session):
         """Pipeline loads JSON file correctly."""
-        with patch("ingest.pipeline.chunk_text") as mock_chunk, \
-             patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class:
-
+        with (
+            patch("ingest.pipeline.chunk_text") as mock_chunk,
+            patch("ingest.pipeline.OllamaEmbedder"),
+        ):
             mock_chunk.return_value = []
             mock_db_session.add = MagicMock()
 
@@ -54,9 +55,10 @@ class TestIngestPipeline:
     @pytest.mark.asyncio
     async def test_chunks_content(self, sample_tari_json, mock_db_session):
         """Pipeline chunks the content."""
-        with patch("ingest.pipeline.chunk_text") as mock_chunk, \
-             patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class:
-
+        with (
+            patch("ingest.pipeline.chunk_text") as mock_chunk,
+            patch("ingest.pipeline.OllamaEmbedder"),
+        ):
             mock_chunk.return_value = []
             mock_db_session.add = MagicMock()
 
@@ -75,9 +77,10 @@ class TestIngestPipeline:
             Chunk(text="Payment Methods", source_url="https://example.com", chunk_index=1),
         ]
 
-        with patch("ingest.pipeline.chunk_text") as mock_chunk, \
-             patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class:
-
+        with (
+            patch("ingest.pipeline.chunk_text") as mock_chunk,
+            patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class,
+        ):
             mock_chunk.return_value = chunks
             mock_embedder = AsyncMock()
             mock_embedder.embed = AsyncMock(return_value=[0.1] * 1536)
@@ -98,17 +101,20 @@ class TestIngestPipeline:
             Chunk(text="Test chunk", source_url="https://example.com", chunk_index=0),
         ]
 
-        with patch("ingest.pipeline.chunk_text") as mock_chunk, \
-             patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class:
-
+        with (
+            patch("ingest.pipeline.chunk_text") as mock_chunk,
+            patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class,
+        ):
             mock_chunk.return_value = chunks
             mock_embedder = AsyncMock()
             mock_embedder.embed = AsyncMock(return_value=[0.1] * 1536)
             mock_embedder_class.return_value = mock_embedder
 
             added_docs = []
+
             def capture_add(doc):
                 added_docs.append(doc)
+
             mock_db_session.add = capture_add
 
             await ingest_json_file(sample_tari_json, mock_db_session)
@@ -124,9 +130,10 @@ class TestIngestPipeline:
     @pytest.mark.asyncio
     async def test_commits_to_database(self, sample_tari_json, mock_db_session):
         """Pipeline commits all changes to database."""
-        with patch("ingest.pipeline.chunk_text") as mock_chunk, \
-             patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class:
-
+        with (
+            patch("ingest.pipeline.chunk_text") as mock_chunk,
+            patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class,
+        ):
             mock_chunk.return_value = []
             mock_embedder_class.return_value = AsyncMock()
 
@@ -162,9 +169,10 @@ class TestIngestPipeline:
             Chunk(text="Content 2", source_url="https://example.com", chunk_index=1),
         ]
 
-        with patch("ingest.pipeline.chunk_text") as mock_chunk, \
-             patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class:
-
+        with (
+            patch("ingest.pipeline.chunk_text") as mock_chunk,
+            patch("ingest.pipeline.OllamaEmbedder") as mock_embedder_class,
+        ):
             mock_chunk.return_value = chunks
             mock_embedder = AsyncMock()
             embeddings = [[0.1 * i] * 1536 for i in range(len(chunks))]

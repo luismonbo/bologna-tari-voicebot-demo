@@ -1,16 +1,15 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.domain.dates import parse_iso_date, validate_future_date, parse_iso_time
 from app.domain.booking import AppointmentStore
+from app.domain.dates import parse_iso_date, parse_iso_time, validate_future_date
 from app.domain.validators import (
+    normalize_italian_phone,
+    sanitize_citizen_name,
     validate_citizen_name,
     validate_italian_phone,
-    sanitize_citizen_name,
-    sanitize_contact,
-    normalize_italian_phone,
 )
 from app.store import get_store
 
@@ -27,7 +26,9 @@ class CreateRequest(BaseModel):
 
 
 @router.post("/create_appointment")
-async def create_appointment(req: CreateRequest, store: AppointmentStore = Depends(get_store)) -> dict:
+async def create_appointment(
+    req: CreateRequest, store: AppointmentStore = Depends(get_store)
+) -> dict:
     # Validate dates and times
     try:
         d = parse_iso_date(req.date)

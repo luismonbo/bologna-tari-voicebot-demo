@@ -2,12 +2,12 @@
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
 class Chunk:
     """A chunk of text from a document."""
+
     text: str
     source_url: str
     chunk_index: int
@@ -37,7 +37,7 @@ def chunk_text(
         return []
 
     # Split by headers (both ## and ####), keeping separators
-    lines = text.split('\n')
+    lines = text.split("\n")
     semantic_units = []
     current_unit = []
 
@@ -45,10 +45,10 @@ def chunk_text(
         # Check if line is a header (starts with # after stripping whitespace)
         stripped = line.lstrip()
         # Match one or more # followed by space or end of line
-        if re.match(r'^#+\s', stripped):
+        if re.match(r"^#+\s", stripped):
             # This is a header - flush current unit and start new one
             if current_unit:
-                semantic_units.append('\n'.join(current_unit))
+                semantic_units.append("\n".join(current_unit))
                 current_unit = []
             current_unit.append(line)
         else:
@@ -56,7 +56,7 @@ def chunk_text(
 
     # Flush final unit
     if current_unit:
-        semantic_units.append('\n'.join(current_unit))
+        semantic_units.append("\n".join(current_unit))
 
     if not semantic_units:
         semantic_units = [text]
@@ -74,19 +74,15 @@ def chunk_text(
         # If unit fits in max_tokens, keep it as single chunk
         if unit_tokens <= max_tokens:
             # Be lenient with header-based units (they're semantic boundaries)
-            has_header = unit.lstrip().startswith('#')
+            has_header = unit.lstrip().startswith("#")
             min_for_this_unit = 2 if has_header else min_tokens
 
             if unit_tokens >= min_for_this_unit:
-                chunks.append(Chunk(
-                    text=unit,
-                    source_url=source_url,
-                    chunk_index=chunk_index
-                ))
+                chunks.append(Chunk(text=unit, source_url=source_url, chunk_index=chunk_index))
                 chunk_index += 1
         else:
             # Split large units by sentences
-            sentences = re.split(r'(?<=[.!?])\s+', unit)
+            sentences = re.split(r"(?<=[.!?])\s+", unit)
             current_chunk = ""
 
             for sentence in sentences:
@@ -96,22 +92,24 @@ def chunk_text(
                 else:
                     # Flush current chunk if it has content
                     if _count_tokens(current_chunk) >= min_tokens:
-                        chunks.append(Chunk(
-                            text=current_chunk.strip(),
-                            source_url=source_url,
-                            chunk_index=chunk_index
-                        ))
+                        chunks.append(
+                            Chunk(
+                                text=current_chunk.strip(),
+                                source_url=source_url,
+                                chunk_index=chunk_index,
+                            )
+                        )
                         chunk_index += 1
                     # Start new chunk
                     current_chunk = sentence
 
             # Flush remaining
             if _count_tokens(current_chunk) >= min_tokens:
-                chunks.append(Chunk(
-                    text=current_chunk.strip(),
-                    source_url=source_url,
-                    chunk_index=chunk_index
-                ))
+                chunks.append(
+                    Chunk(
+                        text=current_chunk.strip(), source_url=source_url, chunk_index=chunk_index
+                    )
+                )
                 chunk_index += 1
 
     return chunks

@@ -1,5 +1,4 @@
-import pytest
-from ingest.chunker import chunk_text, Chunk
+from ingest.chunker import Chunk, chunk_text
 
 
 class TestChunkingBasics:

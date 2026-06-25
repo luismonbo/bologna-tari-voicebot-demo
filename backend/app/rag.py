@@ -1,10 +1,9 @@
 """RAG retrieval via pgvector similarity search."""
 
+from ingest.embedder import OllamaEmbedder
 from sqlalchemy import select
 
 from app.database import DocumentModel, SessionLocal
-from ingest.embedder import OllamaEmbedder
-
 
 _embedder = OllamaEmbedder()
 
@@ -30,12 +29,9 @@ async def _retrieve_similar(
             select(
                 DocumentModel.chunk_text,
                 DocumentModel.source_url,
-                (1 - (DocumentModel.embedding.cosine_distance(embedding)))
-                .label("similarity"),
+                (1 - (DocumentModel.embedding.cosine_distance(embedding))).label("similarity"),
             )
-            .order_by(
-                DocumentModel.embedding.cosine_distance(embedding).asc()
-            )
+            .order_by(DocumentModel.embedding.cosine_distance(embedding).asc())
             .limit(top_k)
         )
 

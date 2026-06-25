@@ -1,8 +1,9 @@
-import pytest
-
-from app.domain.availability import check_availability, get_available_slots
-from tests.conftest import FUTURE_WEEKDAY, FUTURE_SATURDAY, PAST_DATE
 from datetime import date
+
+import pytest
+from app.domain.availability import check_availability, get_available_slots
+
+from tests.conftest import FUTURE_SATURDAY, FUTURE_WEEKDAY, PAST_DATE
 
 
 def test_weekday_returns_slots():

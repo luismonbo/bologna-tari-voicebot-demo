@@ -1,4 +1,3 @@
-import pytest
 from ingest.embedder import OllamaEmbedder
 
 
@@ -31,11 +30,8 @@ class TestOllamaEmbedding:
         """Empty text returns zero vector."""
         embedder = OllamaEmbedder()
 
-        # This should not call Ollama
-        result = embedder._embedding_cache.get("")
-        # (empty text won't be in cache initially)
-        # Just verify the method handles empty gracefully
-        assert True  # Basic instantiation test
+        # This should not call Ollama; empty text is not pre-populated.
+        assert embedder._embedding_cache.get("") is None
 
     def test_cache_structure(self):
         """Embedder has cache dictionary."""

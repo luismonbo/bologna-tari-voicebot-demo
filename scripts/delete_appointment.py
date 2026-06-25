@@ -9,17 +9,16 @@ Usage:
 """
 
 import asyncio
-import sys
 import os
+import sys
 from argparse import ArgumentParser
 
 # Add backend directory to path
 backend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backend")
 sys.path.insert(0, backend_dir)
 
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AppointmentModel, SessionLocal
+from sqlalchemy import delete, select
 
 
 async def delete_appointments(all: bool = False, name: str = None, date: str = None):
@@ -30,7 +29,9 @@ async def delete_appointments(all: bool = False, name: str = None, date: str = N
         if all:
             print("🗑️  Deleting ALL appointments...")
         elif name and date:
-            query = query.where(AppointmentModel.citizen_name == name).where(AppointmentModel.date == date)
+            query = query.where(AppointmentModel.citizen_name == name).where(
+                AppointmentModel.date == date
+            )
             print(f"🗑️  Deleting appointment for {name} on {date}")
         elif name:
             query = query.where(AppointmentModel.citizen_name == name)

@@ -6,19 +6,20 @@ Usage:
 """
 
 import asyncio
-import json
 import os
 import sys
 from pathlib import Path
+
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 # Add backend to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from app.database import Base
+
 from ingest.pipeline import ingest_json_file
-from app.database import Base, DocumentModel
 
 
 async def main():
@@ -26,8 +27,7 @@ async def main():
 
     # Database setup (use env var or default to docker-compose stack)
     db_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/tari_db"
+        "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/tari_db"
     )
     engine = create_async_engine(db_url, echo=False)
 
@@ -36,9 +36,7 @@ async def main():
         await conn.run_sync(Base.metadata.create_all)
 
     # Session factory
-    async_session = sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     # Truncate existing documents before re-ingesting
     async with engine.begin() as conn:

@@ -2,10 +2,12 @@
 
 import json
 from pathlib import Path
+
+from app.database import DocumentModel
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from ingest.chunker import chunk_text
 from ingest.embedder import OllamaEmbedder
-from app.database import DocumentModel
 
 
 async def ingest_json_file(

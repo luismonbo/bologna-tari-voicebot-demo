@@ -1,7 +1,8 @@
 from typing import AsyncGenerator
+
 from app.database import SessionLocal
-from app.domain.postgres_store import PostgresAppointmentStore
 from app.domain.booking import AppointmentStore
+from app.domain.postgres_store import PostgresAppointmentStore
 
 
 async def get_store() -> AsyncGenerator[AppointmentStore, None]:

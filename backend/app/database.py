@@ -1,9 +1,18 @@
 import os
-from sqlalchemy import Column, String, Text, DateTime, UniqueConstraint, Index, Integer, func, create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
+
 from pgvector.sqlalchemy import Vector
-from datetime import datetime, UTC
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+asyncpg://user:password@db:5432/tari")
 
@@ -49,9 +58,7 @@ class DocumentModel(Base):
     embedding = Column(Vector(768), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
-    __table_args__ = (
-        Index("idx_embedding", "embedding", postgresql_using="ivfflat"),
-    )
+    __table_args__ = (Index("idx_embedding", "embedding", postgresql_using="ivfflat"),)
 
 
 async def init_db():

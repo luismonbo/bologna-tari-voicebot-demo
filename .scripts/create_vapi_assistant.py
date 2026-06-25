@@ -24,7 +24,7 @@ ASSISTANT_JSON_PATH = project_root / "vapi" / "assistant.json"
 def get_api_key() -> str:
     """Get VAPI_API_KEY from env or prompt user."""
     if VAPI_API_KEY:
-        print(f"✓ Loaded VAPI_API_KEY from environment")
+        print("✓ Loaded VAPI_API_KEY from environment")
         return VAPI_API_KEY
 
     api_key = input("Enter your VAPI_API_KEY: ").strip()
@@ -67,7 +67,8 @@ def create_or_update_assistant(api_key: str, assistant_config: dict) -> dict:
         url = f"{VAPI_BASE_URL}/assistant"
         # Remove system fields for creation
         payload = {
-            k: v for k, v in assistant_config.items()
+            k: v
+            for k, v in assistant_config.items()
             if k not in ["id", "orgId", "createdAt", "updatedAt"]
         }
         response = requests.post(url, json=payload, headers=headers)

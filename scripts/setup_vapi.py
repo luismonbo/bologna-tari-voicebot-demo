@@ -155,18 +155,14 @@ def get_backend_url() -> str:
     """Get BACKEND_PUBLIC_URL from env or prompt user."""
     if BACKEND_PUBLIC_URL:
         if BACKEND_PUBLIC_URL.startswith("http://localhost"):
-            print(
-                "⚠ Warning: BACKEND_PUBLIC_URL is localhost. Vapi needs a public URL!"
-            )
+            print("⚠ Warning: BACKEND_PUBLIC_URL is localhost. Vapi needs a public URL!")
             print("  Start ngrok: ngrok http 8000")
             print("  Then set: BACKEND_PUBLIC_URL=https://your-ngrok-id.ngrok.io")
         else:
             print(f"✓ Using BACKEND_PUBLIC_URL: {BACKEND_PUBLIC_URL}")
         return BACKEND_PUBLIC_URL
 
-    url = input(
-        "Enter your BACKEND_PUBLIC_URL (e.g., https://your-ngrok-id.ngrok.io): "
-    ).strip()
+    url = input("Enter your BACKEND_PUBLIC_URL (e.g., https://your-ngrok-id.ngrok.io): ").strip()
     if not url:
         print("✗ Error: BACKEND_PUBLIC_URL is required (must be internet-accessible)")
         sys.exit(1)
@@ -316,10 +312,10 @@ def main() -> None:
     print(f"\nAssistant created: {result.get('createdAt')}")
     print(f"Last updated: {result.get('updatedAt')}")
     print("=" * 70)
-    print(f"\nNext steps:")
+    print("\nNext steps:")
     print(f"1. Set ASSISTANT_ID={result.get('id')} in your .env")
-    print(f"2. Keep ngrok running: ngrok http 8000")
-    print(f"3. Update .env BACKEND_PUBLIC_URL to your ngrok URL")
+    print("2. Keep ngrok running: ngrok http 8000")
+    print("3. Update .env BACKEND_PUBLIC_URL to your ngrok URL")
     print(f"4. Assistant config is saved to: {ASSISTANT_JSON_PATH}")
 
 

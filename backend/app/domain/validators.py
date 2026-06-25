@@ -86,8 +86,9 @@ def normalize_italian_phone(phone: str) -> str:
     """
     Normalize Italian phone number to consistent format: +39 XXX XXXXXX or +39 9XX XXXXXX
 
-    Takes any valid Italian phone format and converts to +39 followed by digits with standard spacing.
-    Handles numbers with or without country code prefix.
+    Takes any valid Italian phone format and converts to +39 followed by
+    digits with standard spacing. Handles numbers with or without a country
+    code prefix.
     """
     if not phone:
         return ""

@@ -1,5 +1,6 @@
 """Contract tests for the four tool HTTP endpoints."""
-from tests.conftest import FUTURE_WEEKDAY, FUTURE_SATURDAY, PAST_DATE
+
+from tests.conftest import FUTURE_SATURDAY, FUTURE_WEEKDAY, PAST_DATE
 
 VALID_BOOKING = {
     "office": "tributi",
@@ -14,6 +15,7 @@ VALID_BOOKING = {
 # ---------------------------------------------------------------------------
 # POST /tools/query_services
 # ---------------------------------------------------------------------------
+
 
 def test_query_services_returns_context_for_known_topic(client):
     r = client.post("/tools/query_services", json={"question": "Come si paga la TARI?"})
@@ -47,6 +49,7 @@ def test_query_services_missing_question_returns_422(client):
 # POST /tools/check_availability
 # ---------------------------------------------------------------------------
 
+
 def test_check_availability_weekday_returns_slots(client):
     r = client.post("/tools/check_availability", json={"office": "tributi", "date": FUTURE_WEEKDAY})
     assert r.status_code == 200
@@ -57,7 +60,9 @@ def test_check_availability_weekday_returns_slots(client):
 
 
 def test_check_availability_weekend_returns_unavailable(client):
-    r = client.post("/tools/check_availability", json={"office": "tributi", "date": FUTURE_SATURDAY})
+    r = client.post(
+        "/tools/check_availability", json={"office": "tributi", "date": FUTURE_SATURDAY}
+    )
     assert r.status_code == 200
     body = r.json()
     assert body["available"] is False
@@ -77,6 +82,7 @@ def test_check_availability_invalid_date_format_returns_422(client):
 # ---------------------------------------------------------------------------
 # POST /tools/create_appointment
 # ---------------------------------------------------------------------------
+
 
 def test_create_appointment_happy_path(client):
     r = client.post("/tools/create_appointment", json=VALID_BOOKING)
@@ -126,9 +132,12 @@ def test_create_appointment_missing_field_returns_422(client):
 # POST /tools/lookup_appointment
 # ---------------------------------------------------------------------------
 
+
 def test_lookup_by_name_found(client):
     client.post("/tools/create_appointment", json=VALID_BOOKING)
-    r = client.post("/tools/lookup_appointment", json={"citizen_name": VALID_BOOKING["citizen_name"]})
+    r = client.post(
+        "/tools/lookup_appointment", json={"citizen_name": VALID_BOOKING["citizen_name"]}
+    )
     assert r.status_code == 200
     assert r.json()["status"] == "found"
 

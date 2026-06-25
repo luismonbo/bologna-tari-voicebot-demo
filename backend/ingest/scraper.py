@@ -41,7 +41,7 @@ def scrape_tari_content():
         }
 
     for i, url in enumerate(urls):
-        print(f"\n📄 Scraping ({i+1}/{len(urls)}): {url}")
+        print(f"\n📄 Scraping ({i + 1}/{len(urls)}): {url}")
 
         try:
             scraper = SmartScraperGraph(
@@ -50,7 +50,8 @@ def scrape_tari_content():
                     "Output the raw text exactly as it appears, preserving all details. "
                     "Do NOT summarize or describe the page. "
                     "Do NOT output navigation, headers, footers, or metadata. "
-                    "Only output the actual content about TARI services, information, and procedures."
+                    "Only output the actual content about TARI services, "
+                    "information, and procedures."
                 ),
                 source=url,
                 config=graph_config,

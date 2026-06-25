@@ -11,7 +11,9 @@ from app.database import AppointmentModel, SessionLocal
 
 logger = logging.getLogger(__name__)
 
-UUID_PATTERN = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
+UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
+)
 
 router = APIRouter()
 
@@ -69,7 +71,9 @@ async def get_recent_calls(limit: int = Query(default=10, ge=1, le=10)):
                         "id": call.get("id"),
                         "timestamp": call.get("createdAt"),
                         "duration": extract_duration(call),
-                        "citizen_name": call.get("customer") if isinstance(call.get("customer"), str) and call.get("customer") else None,
+                        "citizen_name": call.get("customer")
+                        if isinstance(call.get("customer"), str) and call.get("customer")
+                        else None,
                         "result": determine_call_result(call),
                     }
                     for call in calls
@@ -161,8 +165,7 @@ def determine_call_result(call: dict) -> str:
 
     # Filter for actual conversation messages (user/bot), not system or tool calls
     conversation_messages = [
-        m for m in messages
-        if m.get("role") in ("user", "bot") and m.get("message")
+        m for m in messages if m.get("role") in ("user", "bot") and m.get("message")
     ]
 
     # If there are conversation messages, it was a meaningful call
