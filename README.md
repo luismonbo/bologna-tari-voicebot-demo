@@ -255,6 +255,8 @@ Replace `abc-123-def` with your actual ngrok subdomain.
 ---
 
 ## Commands Cheat Sheet
+
+```bash
 # === Testing ===
 uv run pytest                                      # Run all tests
 uv run pytest backend/tests/test_*.py -v           # Run with verbose output
