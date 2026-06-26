@@ -37,103 +37,99 @@ def get_tool_definitions(backend_url: str) -> list[dict]:
     return [
         {
             "type": "apiRequest",
-            "name": "query_services_test",
+            "name": "query_services",
             "description": "Query the TARI knowledge base for information about waste tax services",
             "url": f"{backend_url}/tools/query_services",
             "method": "POST",
-            "messages": [
-                {
-                    "type": "request-start",
-                    "content": "Un momento...",
+            "body": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "The question to search in the TARI knowledge base",
+                    }
                 },
-                {
-                    "type": "request-complete",
-                    "content": "Ho completato la richiesta.",
-                },
-                {
-                    "type": "request-failed",
-                    "content": "Mi scuso, non riesco a elaborare la richiesta in questo momento.",
-                },
-                {
-                    "type": "request-response-delayed",
-                    "content": "Sto ancora elaborando...",
-                },
-            ],
+                "required": ["question"],
+            },
         },
         {
             "type": "apiRequest",
-            "name": "check_availability_test",
+            "name": "check_availability",
             "description": "Check availability of appointment slots for a given office and date",
             "url": f"{backend_url}/tools/check_availability",
             "method": "POST",
-            "messages": [
-                {
-                    "type": "request-start",
-                    "content": "Un momento...",
+            "body": {
+                "type": "object",
+                "properties": {
+                    "office": {
+                        "type": "string",
+                        "description": "The office identifier (e.g. 'tributi')",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "The date in YYYY-MM-DD format",
+                    },
                 },
-                {
-                    "type": "request-complete",
-                    "content": "Ho completato la richiesta.",
-                },
-                {
-                    "type": "request-failed",
-                    "content": "Mi scuso, non riesco a elaborare la richiesta in questo momento.",
-                },
-                {
-                    "type": "request-response-delayed",
-                    "content": "Sto ancora elaborando...",
-                },
-            ],
+                "required": ["office", "date"],
+            },
         },
         {
             "type": "apiRequest",
-            "name": "create_appointment_test",
+            "name": "create_appointment",
             "description": "Create an appointment at the specified office",
             "url": f"{backend_url}/tools/create_appointment",
             "method": "POST",
-            "messages": [
-                {
-                    "type": "request-start",
-                    "content": "Un momento...",
+            "body": {
+                "type": "object",
+                "properties": {
+                    "office": {
+                        "type": "string",
+                        "description": "The office identifier (e.g. 'tributi')",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "The date in YYYY-MM-DD format",
+                    },
+                    "time": {
+                        "type": "string",
+                        "description": "The time slot in HH:MM format",
+                    },
+                    "citizen_name": {
+                        "type": "string",
+                        "description": "Full name of the citizen",
+                    },
+                    "contact": {
+                        "type": "string",
+                        "description": "Phone number of the citizen",
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Optional reason for the appointment",
+                    },
                 },
-                {
-                    "type": "request-complete",
-                    "content": "Ho completato la richiesta.",
-                },
-                {
-                    "type": "request-failed",
-                    "content": "Mi scuso, non riesco a elaborare la richiesta in questo momento.",
-                },
-                {
-                    "type": "request-response-delayed",
-                    "content": "Sto ancora elaborando...",
-                },
-            ],
+                "required": ["office", "date", "time", "citizen_name", "contact"],
+            },
         },
         {
             "type": "apiRequest",
-            "name": "lookup_appointment_test",
-            "description": "Look up an existing appointment",
+            "name": "lookup_appointment",
+            "description": "Look up an existing appointment by citizen name and optional date",
             "url": f"{backend_url}/tools/lookup_appointment",
             "method": "POST",
-            "messages": [
-                {
-                    "type": "request-start",
-                    "content": "Un momento...",
+            "body": {
+                "type": "object",
+                "properties": {
+                    "citizen_name": {
+                        "type": "string",
+                        "description": "Full name of the citizen",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "Optional date filter in YYYY-MM-DD format",
+                    },
                 },
-                {
-                    "type": "request-complete",
-                    "content": "Ho completato la richiesta.",
-                },
-                {
-                    "type": "request-failed",
-                    "content": "Mi scuso, non riesco a elaborare la richiesta in questo momento.",
-                },
-                {
-                    "type": "request-response-delayed",
-                    "content": "Sto ancora elaborando...",
-                },
-            ],
+                "required": ["citizen_name"],
+            },
         },
     ]
 
@@ -216,45 +212,37 @@ def create_assistant_with_tool_ids(
     api_key: str, assistant_config: dict, tool_ids: list[str]
 ) -> dict:
     """
-    Create or update assistant referencing existing tool IDs.
+    Create a new assistant referencing existing tool IDs.
+    Always creates fresh — never updates by stored ID.
     """
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
-    assistant_id = assistant_config.get("id")
-
-    # Prepare payload, removing server-generated fields
+    # Strip server-generated fields so we always POST a clean create
     payload = {
         k: v
         for k, v in assistant_config.items()
         if k not in ["id", "orgId", "createdAt", "updatedAt", "isServerUrlSecretSet"]
     }
 
-    # Inject tool IDs into the model section
+    # Inject tool IDs and remove stale inline tools (they carry old ngrok URLs)
     if "model" not in payload:
         payload["model"] = {}
 
+    payload["model"].pop("tools", None)
     payload["model"]["toolIds"] = tool_ids
 
-    if assistant_id:
-        # Update existing
-        print(f"\n▶ Updating assistant: {assistant_id}")
-        url = f"{VAPI_BASE_URL}/assistant/{assistant_id}"
-        response = httpx.put(url, json=payload, headers=headers, timeout=30.0)
-    else:
-        # Create new
-        print("\n▶ Creating new assistant with tool IDs...")
-        url = f"{VAPI_BASE_URL}/assistant"
-        response = httpx.post(url, json=payload, headers=headers, timeout=30.0)
+    print("\n▶ Creating new assistant with tool IDs...")
+    url = f"{VAPI_BASE_URL}/assistant"
+    response = httpx.post(url, json=payload, headers=headers, timeout=30.0)
 
     if response.status_code not in [200, 201]:
         print(f"✗ Error ({response.status_code}): {response.text}")
         sys.exit(1)
 
-    result = response.json()
-    return result
+    return response.json()
 
 
 def save_assistant_config(path: Path, config: dict) -> None:
@@ -313,10 +301,9 @@ def main() -> None:
     print(f"Last updated: {result.get('updatedAt')}")
     print("=" * 70)
     print("\nNext steps:")
-    print(f"1. Set ASSISTANT_ID={result.get('id')} in your .env")
-    print("2. Keep ngrok running: ngrok http 8000")
-    print("3. Update .env BACKEND_PUBLIC_URL to your ngrok URL")
-    print(f"4. Assistant config is saved to: {ASSISTANT_JSON_PATH}")
+    print("1. Keep ngrok running: ngrok http 8000")
+    print("2. Go to https://dashboard.vapi.ai → find 'Bologna TARI Assistant' → click Talk")
+    print(f"3. Assistant config saved to: {ASSISTANT_JSON_PATH}")
 
 
 if __name__ == "__main__":
