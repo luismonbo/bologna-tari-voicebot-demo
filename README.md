@@ -284,9 +284,3 @@ docker compose down                                # Stop all services
 ```
 
 ---
-
-## Next Steps
-
-✓ View appointments at `http://localhost:5173`
-
----
