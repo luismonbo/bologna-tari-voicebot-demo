@@ -80,7 +80,7 @@ Session Status      online
 Forwarding          https://abc-123-def.ngrok.io -> http://localhost:8000
 ```
 
-**Copy the forwarding URL** (e.g., `https://abc-123-def.ngrok.io`) — you'll need it in the next step.
+**Copy the forwarding URL** (e.g., `https://abc-123-def.ngrok-free.app`) — you'll need it in the next step.
 
 ### 5. Upload Vapi Assistant
 
@@ -130,7 +130,7 @@ http://localhost:5173
 
 You'll see:
 - **Appointments table** — all booked appointments
-- **Call logs** — recent calls from Vapi
+- **Call logs** — recent calls from Vapi. May take 1 or 2 minutes for recent call to be logged. 
 
 ---
 
@@ -166,12 +166,14 @@ You:  "Voglio prenotare un appuntamento"
 Bot:  "Certo! Quando preferisci?"
 ```
 
+> [!IMPORTANT]
+> The agent currently only handles questions regarding how to pay the TARI and the agevolazione per unico occupante. Questions outside this scope should be rejected by the agent stating no information about that is present in the knowledge base.
 ### Test Tool Endpoints via ngrok
 
 Use your ngrok URL to test endpoints:
 
 ```bash
-curl -X POST https://abc-123-def.ngrok.io/tools/check_availability \
+curl -X POST https://abc-123-def.ngrok-free.app/tools/check_availability \
   -H "Content-Type: application/json" \
   -d '{"office": "tributi", "date": "2026-06-26"}'
 ```
@@ -253,13 +255,6 @@ Replace `abc-123-def` with your actual ngrok subdomain.
 ---
 
 ## Commands Cheat Sheet
-
-```bash
-# === Start Services ===
-docker compose up --build                          # Start all services
-ngrok http 8000                                    # Expose backend (new terminal)
-uv run scripts/setup_vapi.py                       # Upload assistant to Vapi
-
 # === Testing ===
 uv run pytest                                      # Run all tests
 uv run pytest backend/tests/test_*.py -v           # Run with verbose output
@@ -274,7 +269,7 @@ cd frontend && npm run dev                         # Run frontend locally
 uv run ruff check . && uv run ruff format .        # Lint & format code
 
 # === Database ===
-docker compose exec db psql -U postgres -d bologna_tari  # Connect to DB
+docker compose exec db psql -U postgres -d tari_db  # Connect to DB
 docker compose logs db                             # View database logs
 
 # === Inspection ===
