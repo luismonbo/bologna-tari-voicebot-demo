@@ -25,6 +25,7 @@ This section documents key architectural and implementation decisions made for t
 - **Booking read-back before write** as a prompt instruction, not a tool constraint
 - **Italian endpointing via Vapi/transcriber-native** (not LiveKit, which is English-only)
 - **Transcriber: AssemblyAI multilingual** — supports Italian natively; Deepgram Nova would fail
+- **System prompt** was saved in system_prompt.md for versioning and reference but it is not used by the code.
 
 ### Technical Stack
 

@@ -4,6 +4,21 @@ An Italian-language voice assistant for the Comune di Bologna. Answers TARI (was
 
 ---
 
+## Deliverables (quick reference)
+
+| Brief requirement | Location |
+|---|---|
+| Backend code + setup instructions | This README + `backend/` |
+| Vapi agent config | `vapi/assistant.json` + `scripts/setup_vapi.py` |
+| System prompt (prompt design) | [`system_prompt.md`](system_prompt.md) |
+| Choices, limitations & improvements | [`docs/choices-and-limitations.md`](docs/choices-and-limitations.md) |
+| AI tools used | [`docs/ai-tools-used.md`](docs/ai-tools-used.md) |
+| Docker Compose (extra) | `docker-compose.yml` — three services: `db`, `backend`, `frontend` |
+| Frontend dashboard (extra) | `frontend/` — appointments + call logs at http://localhost:5173 |
+| DB persistence (extra) | Postgres + pgvector (`appointments` table) |
+
+---
+
 ## Prerequisites
 
 Before starting, ensure you have:
@@ -13,6 +28,10 @@ Before starting, ensure you have:
 - **Docker Desktop** (Mac/Windows) or **Docker Engine + Docker Compose** (Linux)
   - Downloads: https://www.docker.com/products/docker-desktop
   - Used to run the database, backend, and frontend in containers
+
+- **uv** (Python package manager)
+  - Install: `curl -LsSf https://astral.sh/uv/install.sh | sh` (Mac/Linux) or see https://docs.astral.sh/uv/getting-started/installation/
+  - Used to run the Vapi setup script and local Python commands
   
 - **ngrok CLI** (free tier is sufficient)
   - Downloads: https://ngrok.com/download
@@ -187,10 +206,15 @@ Replace `abc-123-def` with your actual ngrok subdomain.
 ```
 .
 ├── README.md                    ← Setup instructions (this file)
+├── system_prompt.md             ← Vapi assistant system prompt (prompt design)
 ├── PLAN.md                      ← Full specification
 ├── .env.example                 ← Template (copy to .env)
 ├── docker-compose.yml           ← Services: db, backend, frontend
 ├── pyproject.toml               ← Python dependencies (uv)
+│
+├── docs/
+│   ├── choices-and-limitations.md  ← Decisions, limitations & future improvements
+│   └── ai-tools-used.md            ← AI tools used and how
 │
 ├── backend/
 │   ├── app/main.py              ← FastAPI app
